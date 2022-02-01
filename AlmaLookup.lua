@@ -32,6 +32,7 @@ local function DoLookup( itemBarcode )
     return PrepareLookupResults(response);
 end
 
+
 function PrepareLookupResults(response)
     local lookupResults = {};
 

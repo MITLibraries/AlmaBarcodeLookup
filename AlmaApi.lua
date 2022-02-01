@@ -15,10 +15,11 @@ local log = types["log4net.LogManager"].GetLogger(rootLogger .. ".AlmaApi");
 
 AlmaApi = AlmaApiInternal;
 
+
 local function RetrieveHoldingsList( mmsId )
+    local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
     local requestUrl = AlmaApiInternal.ApiUrl .."bibs/"..
-        Utility.URLEncode(mmsId) .."/holdings?apikey=" .. Utility.URLEncode(AlmaApiInternal.ApiKey);
-    local headers = {"Accept: application/xml", "Content-Type: application/xml"};
+    Utility.URLEncode(mmsId) .."/holdings";
     log:DebugFormat("Request URL: {0}", requestUrl);
     local response = WebClient.GetRequest(requestUrl, headers);
     log:DebugFormat("response = {0}", response);
@@ -27,9 +28,8 @@ local function RetrieveHoldingsList( mmsId )
 end
 
 local function RetrieveBibs( mmsId )
-    local requestUrl = AlmaApiInternal.ApiUrl .. "bibs?apikey="..
-         Utility.URLEncode(AlmaApiInternal.ApiKey) .. "&mms_id=" .. Utility.URLEncode(mmsId);
-    local headers = {"Accept: application/xml", "Content-Type: application/xml"};
+    local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
+    local requestUrl = AlmaApiInternal.ApiUrl .. "bibs?&mms_id=" .. Utility.URLEncode(mmsId);
     log:DebugFormat("Request URL: {0}", requestUrl);
 
     local response = WebClient.GetRequest(requestUrl, headers);
@@ -39,9 +39,8 @@ local function RetrieveBibs( mmsId )
 end
 
 local function RetrieveItemByBarcode( barcode )
-    local requestUrl = AlmaApiInternal.ApiUrl .. "items?apikey="..
-         Utility.URLEncode(AlmaApiInternal.ApiKey) .. "&item_barcode=" .. Utility.URLEncode(barcode);
-    local headers = {"Accept: application/xml", "Content-Type: application/xml"};
+    local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
+    local requestUrl = AlmaApiInternal.ApiUrl .. "items?item_barcode=" .. Utility.URLEncode(barcode);
     log:DebugFormat("Request URL: {0}", requestUrl);
 
     local response = WebClient.GetRequest(requestUrl, headers);
@@ -50,7 +49,28 @@ local function RetrieveItemByBarcode( barcode )
     return WebClient.ReadResponse(response);
 end
 
+local function PlaceHoldByItemPID( item_pid, user, pickup_location )
+    local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
+    local requestUrl = AlmaApiInternal.ApiUrl .. "users/" .. Utility.URLEncode(user) .. "/requests?user_id_type=all_unique&allow_same_request=true&item_pid=" .. Utility.URLEncode(item_pid);
+    log:DebugFormat("Request URL: {0}", requestUrl);
+    local body = [[
+<user_request>
+    <request_type>HOLD</request_type>
+    <pickup_location_type>LIBRARY</pickup_location_type>
+    <pickup_location_library>]] .. pickup_location ..[[</pickup_location_library>
+    <pickup_location_circulation_desk>
+        DEFAULT_CIRC_DESK
+    </pickup_location_circulation_desk>
+</user_request>]]
+    local response = WebClient.PostRequest(requestUrl, headers, body);
+    log:DebugFormat("response = {0}", response)
+
+    return WebClient.ReadResponse(response);
+
+end
+
 -- Exports
 AlmaApi.RetrieveHoldingsList = RetrieveHoldingsList;
 AlmaApi.RetrieveBibs = RetrieveBibs;
 AlmaApi.RetrieveItemByBarcode = RetrieveItemByBarcode;
+AlmaApi.PlaceHoldByItemPID = PlaceHoldByItemPID;

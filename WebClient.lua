@@ -30,7 +30,33 @@ local function GetRequest(requestUrl, headers)
     if(success) then
         return response;
     else
-        log:InfoFormat("Unable to get response from the request url: {0}", error);
+        log:ErrorFormat("Unable to get response from the request url: {0}", error);
+    end
+end
+
+local function PostRequest(requestUrl, headers, body)
+    local webClient = types["System.Net.WebClient"]();
+    local response = nil;
+    log:Debug("Created Web Client");
+    webClient.Encoding = types["System.Text.Encoding"].UTF8;
+
+    for _, header in ipairs(headers) do
+        webClient.Headers:Add(header);
+    end
+
+    local success, error = pcall(function ()
+        response = webClient:UploadString(requestUrl, body);
+    end);
+    log:Debug("POST request sent");
+    webClient:Dispose();
+    log:Debug("Disposed Web Client");
+
+    if(success) then
+        return response;
+    else
+        log:Error("POST request unsuccessful");
+        log:Error(error);
+        return nil
     end
 end
 
@@ -46,11 +72,11 @@ local function ReadResponse( responseString )
         if (documentLoaded) then
             return responseDocument;
         else
-            log:InfoFormat("Unable to load response content as XML: {0}", error);
+            log:ErrorFormat("Unable to load response content as XML: {0}", error);
             return nil;
         end
     else
-        log:Info("Unable to read response content");
+        log:Error("Unable to read response content");
     end
 
     return nil;
@@ -58,4 +84,5 @@ end
 
 --Exports
 WebClient.GetRequest = GetRequest;
+WebClient.PostRequest = PostRequest;
 WebClient.ReadResponse = ReadResponse;

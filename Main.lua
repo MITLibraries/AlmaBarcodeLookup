@@ -22,6 +22,8 @@ settings.AlmaApiKey = GetSetting("Alma API Key");
 settings.AllowOverwriteWithBlankValue = GetSetting("Allow Overwrite With Blank Value");
 settings.FieldsToImport = Utility.StringSplit(",", GetSetting("Fields to Import"));
 settings.FieldToPerformLookupWith = GetSetting("Field to Perform Lookup With");
+settings.UserForLSAHoldRequest = GetSetting("User For LSA Hold Request");
+settings.pickup_location = GetSetting("location code for LSA hold shelf");
 
 -- We will store the interface manager object here so that we don't have to make multiple GetInterfaceManager calls.
 local interfaceMngr = nil;
@@ -39,8 +41,9 @@ function Init()
   log:Debug("Created Ribbon Page");
 
   ribbonPage:CreateButton("Import by Barcode", GetClientImage(DataMapping.ClientImage[product]), "ImportItem", "Options");
+  ribbonPage:CreateButton("Place LSA Hold", GetClientImage(DataMapping.ClientImage[product]), "PlaceLSAHold", "Options");
 
-  log:Debug("Created Button");
+  log:Debug("Created Buttons");
 
   -- Find the field to perform lookup with
   if settings.FieldToPerformLookupWith:lower() == "{default}" then
@@ -82,22 +85,77 @@ end
 function DoLookup()
   -- Set the mouse cursor to busy.
   types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].WaitCursor;
-  local itemBarcode = nil;
-  local succeeded, result = pcall(function() return GetFieldValue(settings.FieldToPerformLookupWith[1], settings.FieldToPerformLookupWith[2]) end)
-
-  if succeeded then
-    itemBarcode = result;
-  end
-
-  if itemBarcode == nil  or itemBarcode == "" then
-    log:Warn("Barcode is nil");
-    return nil;
-  end
-
+  local itemBarcode = GetBarcode();
   local lookupResult = AlmaLookup.DoLookup(itemBarcode);
 
   -- Set the mouse cursor back to default.
   types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].Default;
 
   return lookupResult;
+end
+
+function GetBarcode()
+  
+  local itemBarcode = nil;
+  local succeeded, result = pcall(function() return GetFieldValue(settings.FieldToPerformLookupWith[1], settings.FieldToPerformLookupWith[2]) end)
+  if succeeded then
+    itemBarcode = result;
+  end
+
+  if itemBarcode == nil  or itemBarcode == "" then
+    log:Warn("Barcode is nil");
+    interfaceMngr:ShowMessage("Barcode is nil");
+  end
+  
+  return itemBarcode;
+end
+
+function GetItemPID(barcode)
+  log:InfoFormat("getting item ID for barcode: {0}", barcode);
+  local succeeded, response = pcall(AlmaApi.RetrieveItemByBarcode, barcode);
+  if succeeded then
+    --get Item PID from XML response
+    local item_id = response:GetElementsByTagName("pid"):Item(0).InnerText;
+    log:InfoFormat("item_id: {0}", item_id);
+    return item_id
+  else
+      log:Error("Error Getting item PID");
+  end
+
+end
+
+function PlaceLSAHold()
+
+-- Places a hold on behalf of the user defined in config.xml to be held for pickup at the circ desk defined in config.xml.
+
+-- Set the mouse cursor to busy.
+  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].WaitCursor;
+
+  -- get the barcode from the illiad record
+  local itemBarcode = GetBarcode();
+
+  -- use the barcode to get the PID from Alma
+  local item_id = GetItemPID(itemBarcode);
+
+  --Place hold in Alma using using PID
+  local holdResponse = AlmaApi.PlaceHoldByItemPID(item_id,
+      settings.UserForLSAHoldRequest, settings.pickup_location);
+  log:DebugFormat("placing hold with item_id: {0}, user: {1}, pickup location: {2}", item_id, settings.UserForLSAHoldRequest, settings.pickup_location);
+  -- when a hold is successfully placed, the result will have an xml document with a root 
+  -- element of "user_request". An unsuccessful hold will have an empty holdresponse.
+  -- it doesn't seem like the luanet module that lua is using to integration with .net is -- able to return the webexception error thrown by System.Net.WebClient when a hold 
+  -- request is rejected by the Alma API. 
+  -- see https://code.google.com/archive/p/luainterface/issues/59
+  if(holdResponse ~= nil) and holdResponse.DocumentElement.Name == "user_request" then
+    interfaceMngr:ShowMessage("Hold placed successfully.", "Place LSA Hold");
+    log:Info(holdResponse.DocumentElement.Name);
+    log:DebugFormat("holdResponse: {0}", holdResponse);
+  else
+    interfaceMngr:ShowMessage("Hold failed", "Place LSA Hold");
+    log:Error("error: holdResponse is nil");
+  end
+
+  -- Set the mouse cursor back to default.
+  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].Default;
+
 end

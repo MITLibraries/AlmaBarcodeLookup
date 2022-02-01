@@ -10,7 +10,7 @@ DataMapping.ClientImage["Aeon"] = "srch_32x32";
 -- Barcode Field Mapping
 DataMapping.BarcodeFieldMapping = {};
 DataMapping.BarcodeFieldMapping["Ares"] = "Item.ItemBarcode";
-DataMapping.BarcodeFieldMapping["ILLiad"] = "Transaction.ItemNumber";
+DataMapping.BarcodeFieldMapping["ILLiad"] = "Transaction.SpecIns";
 DataMapping.BarcodeFieldMapping["Aeon"] = "Transaction.ItemNumber";
 
 --Ares Field Mapping
