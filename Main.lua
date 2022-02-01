@@ -15,13 +15,18 @@ local log = types["log4net.LogManager"].GetLogger(rootLogger);
 log:Debug("Finished creating types");
 
 -- Load settings
-local settings = {};
-settings.LookupType = GetSetting("Look Up Type");
-settings.AlmaApiUrl = GetSetting("Alma API URL");
-settings.AlmaApiKey = GetSetting("Alma API Key");
-settings.AllowOverwriteWithBlankValue = GetSetting("Allow Overwrite With Blank Value");
-settings.FieldsToImport = Utility.StringSplit(",", GetSetting("Fields to Import"));
-settings.FieldToPerformLookupWith = GetSetting("Field to Perform Lookup With");
+local settings = {}
+settings.LookupType = GetSetting("Look Up Type")
+settings.AlmaApiUrl = GetSetting("Alma API URL")
+settings.AlmaApiKey = GetSetting("Alma API Key")
+settings.AllowOverwriteWithBlankValue = GetSetting("Allow Overwrite With Blank Value")
+settings.FieldsToImport = Utility.StringSplit(",", GetSetting("Fields to Import"))
+settings.FieldToPerformLookupWith = GetSetting("Field to Perform Lookup With")
+settings.UserForLSAHoldRequest = GetSetting("User Primary ID")
+settings.pickup_location = GetSetting("location code")
+settings.office_delivery = GetSetting("office delivery")
+settings.barcodeField = Utility.StringSplit(".", GetSetting("barcode field"))
+settings.mmsIdField = Utility.StringSplit(".", GetSetting("mms id field"))
 
 -- We will store the interface manager object here so that we don't have to make multiple GetInterfaceManager calls.
 local interfaceMngr = nil;
@@ -35,12 +40,13 @@ function Init()
   log:Debug("Got Interface Manager");
 
   -- Retrieve Ribbon Page and Add Buttons.
-  local ribbonPage = interfaceMngr:CreateRibbonPage("Barcode Lookup");
+  local ribbonPage = interfaceMngr:CreateRibbonPage("MIT LSA Holds");
   log:Debug("Created Ribbon Page");
 
   ribbonPage:CreateButton("Import by Barcode", GetClientImage(DataMapping.ClientImage[product]), "ImportItem", "Options");
+  ribbonPage:CreateButton("Place LSA Hold", GetClientImage(DataMapping.ClientImage[product]), "PlaceLSAHold", "Options");
 
-  log:Debug("Created Button");
+  log:Debug("Created Buttons");
 
   -- Find the field to perform lookup with
   if settings.FieldToPerformLookupWith:lower() == "{default}" then
@@ -63,9 +69,11 @@ function InitializeVariables()
 end
 
 function ImportItem()
-  log:Debug("Importing Item...");
-  local lookupResult = DoLookup();
-  log:Debug("DoLookup Complete");
+  -- Set the mouse cursor to busy.
+  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].WaitCursor;
+  log:Debug("Importing Item...")
+  local lookupResult = DoBarcodeLookup()
+  log:Debug("DoLookup Complete")
 
   if(lookupResult ~= nil) then
     for _, result in ipairs(lookupResult) do
@@ -73,31 +81,108 @@ function ImportItem()
       SetFieldValue(result.valueDestination[1], result.valueDestination[2], result.valueToImport);
     end
   else
-    interfaceMngr:ShowMessage("No item found.", "Item Not found");
+    interfaceMngr:ShowMessage("No item found.", "Item Not found")
+  end
+  -- Set the mouse cursor back to default.
+  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].Default;
+end
+
+function DoBarcodeLookup()
+  if GetField(settings.FieldToPerformLookupWith[1],
+  settings.FieldToPerformLookupWith[2]) then
+    local barcode = GetField(settings.FieldToPerformLookupWith[1],
+    settings.FieldToPerformLookupWith[2])
+    local lookupResult = AlmaLookup.DoLookup(barcode)
+    return lookupResult
+  else
+    return nil
   end
 end
 
--- Returns a lookUpResult that contains a valueDestination array and the value to import
--- The valueDestination array has the table in the first position and the column in the second
-function DoLookup()
-  -- Set the mouse cursor to busy.
-  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].WaitCursor;
-  local itemBarcode = nil;
-  local succeeded, result = pcall(function() return GetFieldValue(settings.FieldToPerformLookupWith[1], settings.FieldToPerformLookupWith[2]) end)
 
+function GetField(fieldTable, field)
+    local result = GetFieldValue(fieldTable, field)
+    if result ~= nil and #result > 0 then
+    return result
+  else
+    return nil
+  end
+
+end
+
+function GetItemPID(barcode)
+  log:InfoFormat("getting item ID for barcode: {0}", barcode);
+  local succeeded, response = pcall(AlmaApi.RetrieveItemByBarcode, barcode);
   if succeeded then
-    itemBarcode = result;
+    --get Item PID from XML response
+    local mms_id = response:GetElementsByTagName("mms_id"):Item(0).InnerText;
+    local holding_id = response:GetElementsByTagName("holding_id"):Item(0).InnerText;
+    local item_id = response:GetElementsByTagName("pid"):Item(0).InnerText;
+    log:InfoFormat("item_id: {0}", item_id);
+    return mms_id, holding_id, item_id;
+  else
+      log:Error("Error Getting item PID");
   end
 
-  if itemBarcode == nil  or itemBarcode == "" then
-    log:Warn("Barcode is nil");
-    return nil;
-  end
+end
 
-  local lookupResult = AlmaLookup.DoLookup(itemBarcode);
+function PlaceLSAHold()
+
+-- Places a hold on behalf of the user defined in config.xml to be held for pickup at the circ desk defined in config.xml.
+
+-- Set the mouse cursor to busy.
+  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].WaitCursor;
+
+  -- get the barcode from the illiad record
+  local itemBarcode = GetBarcode();
+
+    -- We need a barcode or MMS ID to place a hold. 
+    if GetField(settings.barcodeField[1], settings.barcodeField[2]) then
+      local barcode = GetField(settings.barcodeField[1], settings.barcodeField[2])
+      PlaceItemLevelHold(barcode)
+    elseif GetField(settings.mmsIdField[1], settings.mmsIdField[2]) then
+      local mmsId = GetField(settings.mmsIdField[1], settings.mmsIdField[2])
+      PlaceTitleLevelHold(mmsId)
+    else 
+      interfaceMngr:ShowMessage("Either a barcode or MMS ID is required to place hold", "Error")
+    end
+  -- Set the mouse cursor back to default.
+  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].Default
+end
+
+function PlaceItemLevelHold(barcode)
+  -- use the barcode to get IDs required for placing item level hold
+   local mms_id, holding_id, item_id = GetItemPID(barcode)
+
+  --Place item-level hold in Alma
+  local success, response = pcall(
+        AlmaApi.PlaceHoldByItemPID,
+        mms_id, holding_id, item_id,
+        settings.UserForLSAHoldRequest,
+        settings.pickup_location, settings.office_delivery
+      )
+  if success then
+    log:Info("hold placed successfully");
+  else
+    log:Info("hold attempt failed");
+  end
 
   -- Set the mouse cursor back to default.
   types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].Default;
+end
 
-  return lookupResult;
+function PlaceTitleLevelHold(mms_id)
+
+  --Place title-level hold in Alma
+  local success, response = pcall(
+        AlmaApi.PlaceHoldByMmsId,
+        mms_id,
+        settings.UserForLSAHoldRequest,
+        settings.pickup_location, settings.office_delivery
+      )
+  if success then
+    log:Info("hold placed successfully")
+  else
+    log:Info("hold attempt failed")
+  end
 end

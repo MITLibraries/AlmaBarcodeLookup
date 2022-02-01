@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <Name>Alma Barcode Lookup</Name>
-  <Author>Atlas Systems, Inc.</Author>
-  <Version>1.1.0</Version>
+  <Name>MIT LSA holds</Name>
+  <Author>MIT Libraries, Atlas Systems, Inc.</Author>
+  <Version>1.0.0</Version>
   <Active>true</Active>
   <Type>Addon</Type>
   <Description>Performs an Alma Item lookup with the item's barcode and imports the results.</Description>
@@ -26,6 +26,22 @@
     <Setting name="Field to Perform Lookup With" value="{Default}" type="string">
       <Description>The field that is used to perform the Alma Item lookup. The first value is the table in the database the second is the column.</Description>
     </Setting>
+    <Setting name="barcode field" value="Transaction.ItemNumber" type="string">
+      <Description>the table.field where the barcode is stored</Description>
+      </Setting>
+      <Setting name="mms id field" value="Transaction.SpecIns" type="string">
+      <Description>the table.field where the Alma MMS ID is stored</Description>
+      </Setting>
+    <Setting name="User Primary ID" value="IDLSA" type="string">
+      <Description>The Alma Primary Identified of the user for whom holds will be placed.</Description>
+      </Setting>
+      <Setting name="office delivery" value="true" type="boolean">
+      <Description>Deliver to user's office address. Overrides hold shelf setting.
+      </Description>
+      </Setting>
+      <Setting name="location code" value="" type="string">
+      <Description>The Alma Location code for the hold shelf where holds should be delivered. Not applicable for Office Delivery</Description>
+      </Setting>
   </Settings>
   <Files>
     <File>Utility.lua</File>
