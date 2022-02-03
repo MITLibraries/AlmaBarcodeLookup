@@ -1,8 +1,0 @@
-{
-    "Lua.diagnostics.globals": [
-        "luanet",
-        "rootLogger",
-        "product",
-        "GetFieldValue"
-    ]
-}
