@@ -36,7 +36,7 @@
   <Files>
     <File>Utility.lua</File>
     <File>DataMapping.lua</File>
-    <File>Main.lua</File>
+    <File>LsaHolds.lua</File>
     <File>WebClient.lua</File>
     <File>LookupUtility.lua</File>
     <File>AlmaApi.lua</File>
