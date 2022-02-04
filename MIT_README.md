@@ -5,9 +5,9 @@ Adds functionality to Illiad to place holds on items in Alma. Intended to suppor
 
 ## Settings
 two additional settings are required
-> **User For LSA Hold Request:** The user name for which LSA holds will be placed. e.g. example@mit.edu
+> **User Primary ID:** The Alma Primary Identified of the user for whom holds will be placed.
 >
-> **location code for LSA hold shelf:** The Location code for the LSA hold shelf where holds should be delivered.
+> **location code for LSA hold shelf:** The Alma Location code for the hold shelf where holds should be delivered.
 
 ## Buttons
 A **"Place LSA Hold"** button has been added to the addon's ribbon. 
