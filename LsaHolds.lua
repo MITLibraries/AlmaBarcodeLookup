@@ -22,7 +22,7 @@ settings.AlmaApiKey = GetSetting("Alma API Key");
 settings.AllowOverwriteWithBlankValue = GetSetting("Allow Overwrite With Blank Value");
 settings.FieldsToImport = Utility.StringSplit(",", GetSetting("Fields to Import"));
 settings.FieldToPerformLookupWith = GetSetting("Field to Perform Lookup With");
-settings.UserForLSAHoldRequest = GetSetting("User For LSA Hold Request");
+settings.UserForLSAHoldRequest = GetSetting("User Primary ID");
 settings.pickup_location = GetSetting("location code for LSA hold shelf");
 
 -- We will store the interface manager object here so that we don't have to make multiple GetInterfaceManager calls.
@@ -37,10 +37,10 @@ function Init()
   log:Debug("Got Interface Manager");
 
   -- Retrieve Ribbon Page and Add Buttons.
-  local ribbonPage = interfaceMngr:CreateRibbonPage("Barcode Lookup");
+  local ribbonPage = interfaceMngr:CreateRibbonPage("MIT LSA Holds");
   log:Debug("Created Ribbon Page");
 
-  ribbonPage:CreateButton("Import by Barcode", GetClientImage(DataMapping.ClientImage[product]), "ImportItem", "Options");
+  --ribbonPage:CreateButton("Import by Barcode", GetClientImage(DataMapping.ClientImage[product]), "ImportItem", "Options");
   ribbonPage:CreateButton("Place LSA Hold", GetClientImage(DataMapping.ClientImage[product]), "PlaceLSAHold", "Options");
 
   log:Debug("Created Buttons");

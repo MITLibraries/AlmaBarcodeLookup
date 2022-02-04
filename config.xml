@@ -26,11 +26,11 @@
     <Setting name="Field to Perform Lookup With" value="{Default}" type="string">
       <Description>The field that is used to perform the Alma Item lookup. The first value is the table in the database the second is the column.</Description>
     </Setting>
-    <Setting name="User For LSA Hold Request" value="" type="string">
-      <Description>The user name for which LSA holds will be placed. e.g. example@mit.edu</Description>
+    <Setting name="User Primary ID" value="" type="string">
+      <Description>The Alma Primary Identified of the user for whom holds will be placed.</Description>
       </Setting>
       <Setting name="location code for LSA hold shelf" value="" type="string">
-      <Description>The Location code for the LSA hold shelf</Description>
+      <Description>The Alma Location code for the hold shelf where holds should be delivered.</Description>
       </Setting>
   </Settings>
   <Files>
