@@ -115,9 +115,11 @@ function GetItemPID(barcode)
   local succeeded, response = pcall(AlmaApi.RetrieveItemByBarcode, barcode);
   if succeeded then
     --get Item PID from XML response
+    local mms_id = response:GetElementsByTagName("mms_id"):Item(0).InnerText;
+    local holding_id = response:GetElementsByTagName("holding_id"):Item(0).InnerText;
     local item_id = response:GetElementsByTagName("pid"):Item(0).InnerText;
     log:InfoFormat("item_id: {0}", item_id);
-    return item_id
+    return mms_id, holding_id, item_id;
   else
       log:Error("Error Getting item PID");
   end
@@ -135,10 +137,10 @@ function PlaceLSAHold()
   local itemBarcode = GetBarcode();
 
   -- use the barcode to get the PID from Alma
-  local item_id = GetItemPID(itemBarcode);
+  local mms_id, holding_id, item_id = GetItemPID(itemBarcode);
 
   --Place hold in Alma using using PID
-  local holdResponse = AlmaApi.PlaceHoldByItemPID(item_id,
+  local holdResponse = AlmaApi.PlaceHoldByItemPID(mms_id, holding_id, item_id,
       settings.UserForLSAHoldRequest, settings.pickup_location);
   log:DebugFormat("placing hold with item_id: {0}, user: {1}, pickup location: {2}", item_id, settings.UserForLSAHoldRequest, settings.pickup_location);
   -- when a hold is successfully placed, the result will have an xml document with a root 

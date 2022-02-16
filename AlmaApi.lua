@@ -49,9 +49,9 @@ local function RetrieveItemByBarcode( barcode )
     return WebClient.ReadResponse(response);
 end
 
-local function PlaceHoldByItemPID( item_pid, user, pickup_location )
+local function PlaceHoldByItemPID( mms_id, holding_id, item_pid, user, pickup_location )
     local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
-    local requestUrl = AlmaApiInternal.ApiUrl .. "users/" .. Utility.URLEncode(user) .. "/requests?user_id_type=all_unique&allow_same_request=true&item_pid=" .. Utility.URLEncode(item_pid);
+    local requestUrl = AlmaApiInternal.ApiUrl .. "bibs/"..mms_id.."/holdings/"..holding_id.."/items/"..item_pid.."/requests?user_id_type=all_unique&allow_same_request=true&user_id="..Utility.URLEncode(user);
     log:DebugFormat("Request URL: {0}", requestUrl);
     local body = [[
 <user_request>
