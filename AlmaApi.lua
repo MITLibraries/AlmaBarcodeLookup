@@ -49,19 +49,26 @@ local function RetrieveItemByBarcode( barcode )
     return WebClient.ReadResponse(response);
 end
 
-local function PlaceHoldByItemPID( mms_id, holding_id, item_pid, user, pickup_location )
+local function PlaceHoldByItemPID( mms_id, holding_id, item_pid, user, pickup_location, office_delivery)
+    -- if office delivery is selected, pickup_location is ignored.
+    local pickup_location_type =""
+    if office_delivery then
+        pickup_location_type = "USER_WORK_ADDRESS"
+    else
+        pickup_location_type = "LIBRARY"
+    end
+
     local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
     local requestUrl = AlmaApiInternal.ApiUrl .. "bibs/"..mms_id.."/holdings/"..holding_id.."/items/"..item_pid.."/requests?user_id_type=all_unique&allow_same_request=true&user_id="..Utility.URLEncode(user);
     log:DebugFormat("Request URL: {0}", requestUrl);
     local body = [[
 <user_request>
     <request_type>HOLD</request_type>
-    <pickup_location_type>LIBRARY</pickup_location_type>
+    <pickup_location_type>]]..pickup_location_type..[[</pickup_location_type>
     <pickup_location_library>]] .. pickup_location ..[[</pickup_location_library>
-    <pickup_location_circulation_desk>
-        DEFAULT_CIRC_DESK
-    </pickup_location_circulation_desk>
+    <pickup_location_circulation_desk>DEFAULT_CIRC_DESK</pickup_location_circulation_desk>
 </user_request>]]
+    log:DebugFormat("request body: {0}", body);
     local response = WebClient.PostRequest(requestUrl, headers, body);
     log:DebugFormat("response = {0}", response)
 

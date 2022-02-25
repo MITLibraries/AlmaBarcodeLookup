@@ -23,7 +23,8 @@ settings.AllowOverwriteWithBlankValue = GetSetting("Allow Overwrite With Blank V
 settings.FieldsToImport = Utility.StringSplit(",", GetSetting("Fields to Import"));
 settings.FieldToPerformLookupWith = GetSetting("Field to Perform Lookup With");
 settings.UserForLSAHoldRequest = GetSetting("User Primary ID");
-settings.pickup_location = GetSetting("location code for LSA hold shelf");
+settings.pickup_location = GetSetting("location code");
+settings.office_delivery = GetSetting("office delivery");
 
 -- We will store the interface manager object here so that we don't have to make multiple GetInterfaceManager calls.
 local interfaceMngr = nil;
@@ -141,7 +142,9 @@ function PlaceLSAHold()
 
   --Place hold in Alma using using PID
   local holdResponse = AlmaApi.PlaceHoldByItemPID(mms_id, holding_id, item_id,
-      settings.UserForLSAHoldRequest, settings.pickup_location);
+      settings.UserForLSAHoldRequest, settings.pickup_location, settings.office_delivery);
+  local office_delivery_string = tostring(settings.office_delivery)
+  log:Info("office delivery:".. office_delivery_string);
   log:DebugFormat("placing hold with item_id: {0}, user: {1}, pickup location: {2}", item_id, settings.UserForLSAHoldRequest, settings.pickup_location);
   -- when a hold is successfully placed, the result will have an xml document with a root 
   -- element of "user_request". An unsuccessful hold will have an empty holdresponse.
