@@ -29,8 +29,12 @@
     <Setting name="User Primary ID" value="" type="string">
       <Description>The Alma Primary Identified of the user for whom holds will be placed.</Description>
       </Setting>
-      <Setting name="location code for LSA hold shelf" value="" type="string">
-      <Description>The Alma Location code for the hold shelf where holds should be delivered.</Description>
+      <Setting name="office delivery" value="" type="boolean">
+      <Description>Deliver to user's office address. Overrides hold shelf setting.
+      </Description>
+      </Setting>
+      <Setting name="location code" value="" type="string">
+      <Description>The Alma Location code for the hold shelf where holds should be delivered. Not applicable for Office Delivery</Description>
       </Setting>
   </Settings>
   <Files>
