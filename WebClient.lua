@@ -6,6 +6,7 @@ types["System.Net.WebClient"] = luanet.import_type("System.Net.WebClient");
 types["System.Text.Encoding"] = luanet.import_type("System.Text.Encoding");
 types["System.Xml.XmlTextReader"] = luanet.import_type("System.Xml.XmlTextReader");
 types["System.Xml.XmlDocument"] = luanet.import_type("System.Xml.XmlDocument");
+types["System.IO.StreamReader"] = luanet.import_type("System.IO.StreamReader")
 
 -- Create a logger
 local log = types["log4net.LogManager"].GetLogger(rootLogger .. ".WebClient");
@@ -23,7 +24,6 @@ local function GetRequest(requestUrl, headers)
     local success, error = pcall(function ()
         response = webClient:DownloadString(requestUrl);
     end);
-
     webClient:Dispose();
     log:Debug("Disposed Web Client");
 
@@ -54,12 +54,19 @@ local function PostRequest(requestUrl, headers, body)
     if(success) then
         return response;
     else
+        local serverResponse = error.InnerException.Response;
+        local dataRs = serverResponse:GetResponseStream();
+        local reader = types["System.IO.StreamReader"](dataRs);
+        local responseFromServer = reader:ReadToEnd();
+
+        log:Error(responseFromServer);
+        log:Error(error.InnerException.Status);
+        log:Error(error.InnerException.Message);
         log:Error("POST request unsuccessful");
-        log:Error(error);
+        log:Error(error:GetBaseException());
         return nil
     end
 end
-
 local function ReadResponse( responseString )
     if (responseString and #responseString > 0) then
 
@@ -81,6 +88,7 @@ local function ReadResponse( responseString )
 
     return nil;
 end
+
 
 --Exports
 WebClient.GetRequest = GetRequest;
