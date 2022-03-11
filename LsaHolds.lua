@@ -140,24 +140,25 @@ function PlaceLSAHold()
   -- use the barcode to get the PID from Alma
   local mms_id, holding_id, item_id = GetItemPID(itemBarcode);
 
-  --Place hold in Alma using using PID
-  local holdResponse = AlmaApi.PlaceHoldByItemPID(mms_id, holding_id, item_id,
-      settings.UserForLSAHoldRequest, settings.pickup_location, settings.office_delivery);
-  local office_delivery_string = tostring(settings.office_delivery)
+  -- debug logging
+  local office_delivery_string = tostring(settings.office_delivery);
   log:Info("office delivery:".. office_delivery_string);
   log:DebugFormat("placing hold with item_id: {0}, user: {1}, pickup location: {2}", item_id, settings.UserForLSAHoldRequest, settings.pickup_location);
-  -- when a hold is successfully placed, the result will have an xml document with a root 
-  -- element of "user_request". An unsuccessful hold will have an empty holdresponse.
-  -- it doesn't seem like the luanet module that lua is using to integration with .net is -- able to return the webexception error thrown by System.Net.WebClient when a hold 
-  -- request is rejected by the Alma API. 
-  -- see https://code.google.com/archive/p/luainterface/issues/59
-  if(holdResponse ~= nil) and holdResponse.DocumentElement.Name == "user_request" then
-    interfaceMngr:ShowMessage("Hold placed for user: " .. holdResponse:GetElementsByTagName("user_primary_id"):Item(0).InnerText, "Place LSA Hold");
-    log:Info(holdResponse.DocumentElement.Name);
-    log:DebugFormat("holdResponse: {0}", holdResponse);
+
+  --Place hold in Alma using using PID
+  local success, response = pcall(
+        AlmaApi.PlaceHoldByItemPID,
+        mms_id, holding_id, item_id,
+        settings.UserForLSAHoldRequest, 
+        settings.pickup_location, settings.office_delivery
+      );
+
+  if success then
+    -- we expect to get an xml document as the response object
+    interfaceMngr:ShowMessage("Hold placed for user: " .. response:GetElementsByTagName("user_primary_id"):Item(0).InnerText, "Place LSA Hold");
   else
-    interfaceMngr:ShowMessage("Hold failed", "Place LSA Hold");
-    log:Error("error: holdResponse is nil");
+    -- we expect to get an xml document as the error object
+    interfaceMngr:ShowMessage("Hold failed:" .. response:GetElementsByTagName("errorMessage"):Item(0).InnerText, "ERROR");
   end
 
   -- Set the mouse cursor back to default.

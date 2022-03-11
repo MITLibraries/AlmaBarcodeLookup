@@ -69,10 +69,19 @@ local function PlaceHoldByItemPID( mms_id, holding_id, item_pid, user, pickup_lo
     <pickup_location_circulation_desk>DEFAULT_CIRC_DESK</pickup_location_circulation_desk>
 </user_request>]]
     log:DebugFormat("request body: {0}", body);
-    local response = WebClient.PostRequest(requestUrl, headers, body);
+    local success,response = pcall(WebClient.PostRequest, requestUrl, headers, body);
     log:DebugFormat("response = {0}", response)
 
-    return WebClient.ReadResponse(response);
+    if success then
+        -- we expect the response to be a string of xml from the Alma server.
+        -- Return xml document from the successful hold response
+        return WebClient.ReadResponse(response);
+        
+    else
+        -- we expect the error object to contain a string of xml from the Alma server.
+        -- Convert that string to an xml document and throw an error.
+        error(WebClient.ReadResponse(response));
+    end
 
 end
 

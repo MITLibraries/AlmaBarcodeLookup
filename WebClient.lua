@@ -44,27 +44,29 @@ local function PostRequest(requestUrl, headers, body)
         webClient.Headers:Add(header);
     end
 
-    local success, error = pcall(function ()
-        response = webClient:UploadString(requestUrl, body);
-    end);
+    local success, response = pcall(webClient.UploadString, webClient, requestUrl, body);
     log:Debug("POST request sent");
     webClient:Dispose();
     log:Debug("Disposed Web Client");
 
-    if(success) then
+    if success then
+        -- return the body of the response as a string
         return response;
     else
-        local serverResponse = error.InnerException.Response;
+        -- if webclient.UploadString throws a WebException
+        -- throw and error contating the response body
+        -- as a string
+        local serverResponse = response.InnerException.Response;
         local dataRs = serverResponse:GetResponseStream();
         local reader = types["System.IO.StreamReader"](dataRs);
-        local responseFromServer = reader:ReadToEnd();
+        local responseBody = reader:ReadToEnd();
 
-        log:Error(responseFromServer);
-        log:Error(error.InnerException.Status);
-        log:Error(error.InnerException.Message);
+        log:Error(responseBody);
+        log:Error(response.InnerException.Status);
+        log:Error(response.InnerException.Message);
         log:Error("POST request unsuccessful");
-        log:Error(error:GetBaseException());
-        return nil
+        log:Error(response:GetBaseException());
+        error(responseBody,0);
     end
 end
 local function ReadResponse( responseString )
