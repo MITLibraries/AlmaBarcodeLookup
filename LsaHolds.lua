@@ -152,7 +152,7 @@ function PlaceLSAHold()
   -- request is rejected by the Alma API. 
   -- see https://code.google.com/archive/p/luainterface/issues/59
   if(holdResponse ~= nil) and holdResponse.DocumentElement.Name == "user_request" then
-    interfaceMngr:ShowMessage("Hold placed successfully.", "Place LSA Hold");
+    interfaceMngr:ShowMessage("Hold placed for user: " .. holdResponse:GetElementsByTagName("user_primary_id"):Item(0).InnerText, "Place LSA Hold");
     log:Info(holdResponse.DocumentElement.Name);
     log:DebugFormat("holdResponse: {0}", holdResponse);
   else
