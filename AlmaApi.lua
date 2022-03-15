@@ -49,7 +49,8 @@ local function RetrieveItemByBarcode( barcode )
     return WebClient.ReadResponse(response);
 end
 
-local function PlaceHoldByItemPID( mms_id, holding_id, item_pid, user, pickup_location, office_delivery)
+local function PlaceHoldByItemPID(mms_id, holding_id, item_pid, user, pickup_location, office_delivery)
+    local interfaceMngr = GetInterfaceManager();
     -- if office delivery is selected, pickup_location is ignored.
     local pickup_location_type =""
     if office_delivery then
@@ -69,20 +70,22 @@ local function PlaceHoldByItemPID( mms_id, holding_id, item_pid, user, pickup_lo
     <pickup_location_circulation_desk>DEFAULT_CIRC_DESK</pickup_location_circulation_desk>
 </user_request>]]
     log:DebugFormat("request body: {0}", body);
-    local success,response = pcall(WebClient.PostRequest, requestUrl, headers, body);
-    log:DebugFormat("response = {0}", response)
-
+    local success, response = pcall(WebClient.PostRequest, requestUrl, headers, body);
+    log:DebugFormat("response = {0}", response);
+    log:DebugFormat("success: {0}", success)
     if success then
-        -- we expect the response to be a string of xml from the Alma server.
-        -- Return xml document from the successful hold response
-        return WebClient.ReadResponse(response);
-        
+        -- we expect to get an xml document as the response object in a successful hold attempt
+        log:Debug("call to webClient.post request was successful")
+        interfaceMngr:ShowMessage("Hold placed for user: ".. WebClient.ReadResponse(response):GetElementsByTagName("user_primary_id"):Item(0).InnerText, "Place LSA Hold");
+        return
     else
-        -- we expect the error object to contain a string of xml from the Alma server.
+        -- If the hold attempt fails, we expect the error object to contain a string of xml from the Alma server.
         -- Convert that string to an xml document and throw an error.
-        error(WebClient.ReadResponse(response));
+        -- show an error message and throw an error
+        log:Debug("call to webClient.post request was NOT successful")
+        interfaceMngr:ShowMessage("Hold failed: ".. WebClient.ReadResponse(response):GetElementsByTagName("errorMessage"):Item(0).InnerText, "ERROR");
+        error("some error message");
     end
-
 end
 
 -- Exports

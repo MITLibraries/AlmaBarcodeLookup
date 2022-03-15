@@ -105,7 +105,7 @@ function GetBarcode()
 
   if itemBarcode == nil  or itemBarcode == "" then
     log:Warn("Barcode is nil");
-    interfaceMngr:ShowMessage("Barcode is nil");
+    interfaceMngr:ShowMessage("Barcode is nil", "Barcode is nil");
   end
   
   return itemBarcode;
@@ -152,16 +152,13 @@ function PlaceLSAHold()
         settings.UserForLSAHoldRequest, 
         settings.pickup_location, settings.office_delivery
       );
-
   if success then
-    -- we expect to get an xml document as the response object
-    interfaceMngr:ShowMessage("Hold placed for user: " .. response:GetElementsByTagName("user_primary_id"):Item(0).InnerText, "Place LSA Hold");
+    log:Info("hold placed successfully");
   else
-    -- we expect to get an xml document as the error object
-    interfaceMngr:ShowMessage("Hold failed:" .. response:GetElementsByTagName("errorMessage"):Item(0).InnerText, "ERROR");
+    log:Info("hold attempt failed");
   end
 
   -- Set the mouse cursor back to default.
   types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].Default;
-
 end
+
