@@ -6,6 +6,7 @@ types["System.Net.WebClient"] = luanet.import_type("System.Net.WebClient");
 types["System.Text.Encoding"] = luanet.import_type("System.Text.Encoding");
 types["System.Xml.XmlTextReader"] = luanet.import_type("System.Xml.XmlTextReader");
 types["System.Xml.XmlDocument"] = luanet.import_type("System.Xml.XmlDocument");
+types["System.IO.StreamReader"] = luanet.import_type("System.IO.StreamReader")
 
 -- Create a logger
 local log = types["log4net.LogManager"].GetLogger(rootLogger .. ".WebClient");
@@ -23,7 +24,6 @@ local function GetRequest(requestUrl, headers)
     local success, error = pcall(function ()
         response = webClient:DownloadString(requestUrl);
     end);
-
     webClient:Dispose();
     log:Debug("Disposed Web Client");
 
@@ -44,22 +44,31 @@ local function PostRequest(requestUrl, headers, body)
         webClient.Headers:Add(header);
     end
 
-    local success, error = pcall(function ()
-        response = webClient:UploadString(requestUrl, body);
-    end);
+    local success, response = pcall(webClient.UploadString, webClient, requestUrl, body);
     log:Debug("POST request sent");
     webClient:Dispose();
     log:Debug("Disposed Web Client");
 
-    if(success) then
+    if success then
+        -- return the body of the response as a string
         return response;
     else
+        -- if webclient.UploadString throws a WebException
+        -- throw and error contating the response body
+        -- as a string
+        local serverResponse = response.InnerException.Response;
+        local dataRs = serverResponse:GetResponseStream();
+        local reader = types["System.IO.StreamReader"](dataRs);
+        local responseBody = reader:ReadToEnd();
+
+        log:Error(responseBody);
+        log:Error(response.InnerException.Status);
+        log:Error(response.InnerException.Message);
         log:Error("POST request unsuccessful");
-        log:Error(error);
-        return nil
+        log:Error(response:GetBaseException());
+        error(responseBody,0);
     end
 end
-
 local function ReadResponse( responseString )
     if (responseString and #responseString > 0) then
 
@@ -81,6 +90,7 @@ local function ReadResponse( responseString )
 
     return nil;
 end
+
 
 --Exports
 WebClient.GetRequest = GetRequest;
