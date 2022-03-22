@@ -26,10 +26,16 @@
     <Setting name="Field to Perform Lookup With" value="{Default}" type="string">
       <Description>The field that is used to perform the Alma Item lookup. The first value is the table in the database the second is the column.</Description>
     </Setting>
-    <Setting name="User Primary ID" value="" type="string">
+    <Setting name="barcode field" value="Transaction.ItemNumber" type="string">
+      <Description>the table.field where the barcode is stored</Description>
+      </Setting>
+      <Setting name="mms id field" value="Transaction.SpecIns" type="string">
+      <Description>the table.field where the Alma MMS ID is stored</Description>
+      </Setting>
+    <Setting name="User Primary ID" value="IDLSA" type="string">
       <Description>The Alma Primary Identified of the user for whom holds will be placed.</Description>
       </Setting>
-      <Setting name="office delivery" value="" type="boolean">
+      <Setting name="office delivery" value="true" type="boolean">
       <Description>Deliver to user's office address. Overrides hold shelf setting.
       </Description>
       </Setting>

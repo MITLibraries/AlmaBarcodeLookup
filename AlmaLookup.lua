@@ -25,7 +25,7 @@ local function DoLookup( itemBarcode )
     local succeeded, response = pcall(AlmaApi.RetrieveItemByBarcode, itemBarcode);
 
     if not succeeded then
-        log:Error("Error performing lookup");
+        log:Error(response);
         return nil;
     end
 

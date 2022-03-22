@@ -13,7 +13,6 @@ local log = types["log4net.LogManager"].GetLogger(rootLogger .. ".WebClient");
 
 local function GetRequest(requestUrl, headers)
     local webClient = types["System.Net.WebClient"]();
-    local response = nil;
     log:Debug("Created Web Client");
     webClient.Encoding = types["System.Text.Encoding"].UTF8;
 
@@ -21,22 +20,34 @@ local function GetRequest(requestUrl, headers)
         webClient.Headers:Add(header);
     end
 
-    local success, error = pcall(function ()
-        response = webClient:DownloadString(requestUrl);
-    end);
+    local success, response = pcall(webClient.DownloadString, webClient, requestUrl);
+    log:Debug("GET request sent");
     webClient:Dispose();
     log:Debug("Disposed Web Client");
 
     if(success) then
+        -- return the body of the response as a string
         return response;
     else
-        log:ErrorFormat("Unable to get response from the request url: {0}", error);
+        -- if webclient.DownloadString throws a WebException
+        -- then throw an error containing the response body
+        -- as a string
+        local serverResponse = response.InnerException.Response;
+        local dataRs = serverResponse:GetResponseStream();
+        local reader = types["System.IO.StreamReader"](dataRs);
+        local responseBody = reader:ReadToEnd();
+
+        log:Error(responseBody);
+        log:Error(response.InnerException.Status);
+        log:Error(response.InnerException.Message);
+        log:Error("POST request unsuccessful");
+        log:Error(response:GetBaseException());
+        error(responseBody,0);
     end
 end
 
 local function PostRequest(requestUrl, headers, body)
     local webClient = types["System.Net.WebClient"]();
-    local response = nil;
     log:Debug("Created Web Client");
     webClient.Encoding = types["System.Text.Encoding"].UTF8;
 
@@ -54,7 +65,7 @@ local function PostRequest(requestUrl, headers, body)
         return response;
     else
         -- if webclient.UploadString throws a WebException
-        -- throw and error contating the response body
+        -- then throw an error containing the response body
         -- as a string
         local serverResponse = response.InnerException.Response;
         local dataRs = serverResponse:GetResponseStream();
