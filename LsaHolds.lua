@@ -88,10 +88,12 @@ function ImportItem()
 end
 
 function DoBarcodeLookup()
-  local result = GetField(settings.FieldToPerformLookupWith[1],settings.FieldToPerformLookupWith[2])
-  if result then
-    local lookupResult = AlmaLookup.DoLookup(result)
-    return lookupResult;
+  if GetField(settings.FieldToPerformLookupWith[1],
+  settings.FieldToPerformLookupWith[2]) then
+    local barcode = GetField(settings.FieldToPerformLookupWith[1],
+    settings.FieldToPerformLookupWith[2])
+    local lookupResult = AlmaLookup.DoLookup(barcode)
+    return lookupResult
   else
     return nil
   end
@@ -128,7 +130,7 @@ function PlaceLSAHold()
   -- Set the mouse cursor to busy.
   types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].WaitCursor;
 
-    -- try to get the barcode from the illiad record
+    -- We need a barcode or MMS ID to place a hold. 
     if GetField(settings.barcodeField[1], settings.barcodeField[2]) then
       local barcode = GetField(settings.barcodeField[1], settings.barcodeField[2])
       PlaceItemLevelHold(barcode)
