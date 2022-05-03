@@ -1,44 +1,44 @@
-local UtilityInternal = {};
-UtilityInternal.DebugLogging = false;
+local UtilityInternal = {}
+UtilityInternal.DebugLogging = false
 
 Utility = UtilityInternal;
 
-luanet.load_assembly("System");
+luanet.load_assembly("System")
 
 local types = {};
-types["System.Type"] = luanet.import_type("System.Type");
-types["System.Action"] = luanet.import_type("System.Action");
+types["System.Type"] = luanet.import_type("System.Type")
+types["System.Action"] = luanet.import_type("System.Action")
 
 local function Log(input, debugOnly)
-  debugOnly = debugOnly or false;
+  debugOnly = debugOnly or false
 
   if ((not debugOnly) or (debugOnly and UtilityInternal.DebugLogging)) then
-    local t = type(input);
+    local t = type(input)
 
     if (t == "string" or t == "number") then
-      LogDebug(input);
+      LogDebug(input)
     elseif (t == "table") then
-      LogTable(input);
+      LogTable(input)
     elseif (t == "nil") then
-      LogDebug("(nil)");
+      LogDebug("(nil)")
     elseif (t == "boolean") then
       if (input == true) then
-        LogDebug("True");
+        LogDebug("True")
       else
-        LogDebug("False");
+        LogDebug("False")
       end
     elseif (t == "function") then
-      local success, result = pcall(input);
+      local success, result = pcall(input)
 
       if (success) then
-        Log(result, debugOnly);
+        Log(result, debugOnly)
       end
     elseif (t == "userdata") then
       if (IsType(input, "System.Exception")) then
-        LogException(input);
+        LogException(input)
       else
         pcall(function()
-        LogDebug(input:ToString());
+        LogDebug(input:ToString())
         end);
       end
     end
@@ -52,18 +52,18 @@ end
 
 local function IsType(o, t, checkFullName)
   if ((o and type(o) == "userdata") and (t and type(t) == "string")) then
-    local comparisonType = types["System.Type"].GetType(t);
+    local comparisonType = types["System.Type"].GetType(t)
     if (comparisonType) then
       -- The comparison type was successfully loaded so we can do a check
       -- that the object can be assigned to the comparison type.
-      return comparisonType:IsAssignableFrom(o:GetType()), true;
+      return comparisonType:IsAssignableFrom(o:GetType()), true
     else
       -- The comparison type was could not be loaded so we can only check
       -- based on the names of the types.
       if(checkFullName) then
-        return (o:GetType().FullName == t), false;
+        return (o:GetType().FullName == t), false
       else
-        return (o:GetType().Name == t), false;
+        return (o:GetType().Name == t), false
       end
     end
   end
@@ -73,67 +73,67 @@ end
 
 local function LogIndented(entry, depth)
   depth = (depth or 0);
-  LogDebug(string.rep("> ", depth) .. entry);
+  LogDebug(string.rep("> ", depth) .. entry)
 end
 
 local function LogTable(input, depth)
-  assert(type(input) == "table", "LogTable expects a LUA table");
+  assert(type(input) == "table", "LogTable expects a LUA table")
 
   depth = (depth or 0);
 
   for key, value in pairs(input) do
     if (value and type(value) == "table") then
-      LogIndented("Key: " .. key, depth);
-      LogTable(value, depth + 1);
+      LogIndented("Key: " .. key, depth)
+      LogTable(value, depth + 1)
     else
-      local success, result = pcall(string.format, "%s", (value or "(nil)"));
+      local success, result = pcall(string.format, "%s", (value or "(nil)"))
 
       if (success) then
-        LogIndented("Key: " .. key .. " = " .. (value or "(nil)"), depth);
+        LogIndented("Key: " .. key .. " = " .. (value or "(nil)"), depth)
       else
-        LogIndented("Key: " .. key .. " = (?)", depth);
+        LogIndented("Key: " .. key .. " = (?)", depth)
       end
     end
   end
 
   for index, value in ipairs(input) do
     if (value and type(value) == "table") then
-      LogIndented("Index: " .. index, depth);
-      LogTable(value, depth + 1);
+      LogIndented("Index: " .. index, depth)
+      LogTable(value, depth + 1)
     else
-      LogIndented("Index: " .. index .. " = " .. (value or "(nil)"), depth);
+      LogIndented("Index: " .. index .. " = " .. (value or "(nil)"), depth)
     end
   end
 end
 
 function LogException(exception, depth)
-  depth = (depth or 0);
+  depth = (depth or 0)
 
   if (exception) then
-    LogIndented(exception.Message, depth);
-    LogException(exception.InnerException, depth + 1);
+    LogIndented(exception.Message, depth)
+    LogException(exception.InnerException, depth + 1)
   end
 end
 
 
 
 function URLDecode(s)
-  s = string.gsub(s, "+", " ");
+  s = string.gsub(s, "+", " ")
   s = string.gsub(s, "%%(%x%x)", function(h)
-  return string.char(tonumber(h, 16));
-  end);
+  return string.char(tonumber(h, 16))
+  end)
 
-  s = string.gsub(s, "\r\n", "\n");
+  s = string.gsub(s, "\r\n", "\n")
 
-  return s;
+  return s
 end
 
 function StringSplit(delimiter, text)
   if delimiter == nil then
     delimiter = "%s"
   end
-  local t={};
-  local i=1;
+  local t={}
+  local i=1
   for str in string.gmatch(text, "([^"..delimiter.."]+)") do
     t[i] = str
     i = i + 1
@@ -147,7 +147,7 @@ local function URLEncode(s)
     s = string.gsub(s, "([^%w %-%_%.%~])",
     function (c)
       return string.format("%%%02X", string.byte(c))
-      end);
+      end)
       s = string.gsub(s, " ", "+")
     end
     return s
@@ -162,69 +162,68 @@ local function URLEncode(s)
         if (v) then
           local success, value = pcall(URLEncode, v);
           if (success) then
-            query = string.format("%s%s=%s", ((query and (query .. "&")) or ""), k, value);
+            query = string.format("%s%s=%s", ((query and (query .. "&")) or ""), k, value)
           end
         end
       end
     end
 
-    return query;
+    return query
   end
 
   local function GetNodeCount(xmlElement, xPath, namespaceManager)
     if (xmlElement == nil or xPath == nil) then
-      Log("Invalid Element/Path to retrieve value", true);
-      return nil;
+      Log("Invalid Element/Path to retrieve value", true)
+      return nil
     end
 
-    Log("GetNodeCount Path: ".. xPath, true);
+    Log("GetNodeCount Path: ".. xPath, true)
 
-    local datafieldNode = nil;
+    local datafieldNode = nil
 
     if (namespaceManager ~= nil) then
-      datafieldNode = xmlElement:SelectNodes(xPath, namespaceManager);
+      datafieldNode = xmlElement:SelectNodes(xPath, namespaceManager)
     else
-      datafieldNode = xmlElement:SelectNodes(xPath);
+      datafieldNode = xmlElement:SelectNodes(xPath)
     end
 
-    return datafieldNode.Count;
+    return datafieldNode.Count
   end
 
   local function GetChildValue(xmlElement, xPath, namespaceManager)
-    Log("[Utility.GetChildValue] "..xPath);
+    Log("[Utility.GetChildValue] "..xPath)
     if (xmlElement == nil or xPath == nil) then
-      Log("Invalid Element/Path to retrieve value.");
+      Log("Invalid Element/Path to retrieve value.")
       return nil;
     end
 
-    local datafieldNode = nil;
+    local datafieldNode = nil
 
     if (namespaceManager ~= nil) then
-      datafieldNode = xmlElement:SelectNodes(xPath, namespaceManager);
+      datafieldNode = xmlElement:SelectNodes(xPath, namespaceManager)
     else
-      datafieldNode = xmlElement:SelectNodes(xPath);
+      datafieldNode = xmlElement:SelectNodes(xPath)
     end
 
-    Log("Found "..datafieldNode.Count.." node elements matching "..xPath);
-    local fieldValue = "";
+    Log("Found "..datafieldNode.Count.." node elements matching "..xPath)
+    local fieldValue = ""
     for d = 0, (datafieldNode.Count - 1) do
-      Log("datafieldnode value is: " .. datafieldNode:Item(d).InnerText, true);
-      fieldValue = fieldValue .. " " .. datafieldNode:Item(d).InnerText;
+      Log("datafieldnode value is: " .. datafieldNode:Item(d).InnerText, true)
+      fieldValue = fieldValue .. " " .. datafieldNode:Item(d).InnerText
     end
 
-    fieldValue = Trim(fieldValue);
-    Log("GetChildValue Result: " .. fieldValue, true);
+    fieldValue = Trim(fieldValue)
+    Log("GetChildValue Result: " .. fieldValue, true)
 
-    return fieldValue;
+    return fieldValue
   end
 
-  UtilityInternal.Trim = Trim;
-  UtilityInternal.IsType = IsType;
-  UtilityInternal.Log = Log;
-  UtilityInternal.URLDecode = URLDecode;
-  UtilityInternal.URLEncode = URLEncode;
-  UtilityInternal.StringSplit = StringSplit;
-  UtilityInternal.CreateQueryString = CreateQueryString;
-  UtilityInternal.GetXmlChildValue = GetChildValue;
-  UtilityInternal.GetXmlNodeCount = GetNodeCount;
-  UtilityInternal.RemoveTrailingSpecialCharacters = RemoveTrailingSpecialCharacters;
+  UtilityInternal.Trim = Trim
+  UtilityInternal.IsType = IsType
+  UtilityInternal.Log = Log
+  UtilityInternal.URLDecode = URLDecode
+  UtilityInternal.URLEncode = URLEncode
+  UtilityInternal.StringSplit = StringSplit
+  UtilityInternal.CreateQueryString = CreateQueryString
+  UtilityInternal.GetXmlChildValue = GetChildValue
+  UtilityInternal.GetXmlNodeCount = GetNodeCount
