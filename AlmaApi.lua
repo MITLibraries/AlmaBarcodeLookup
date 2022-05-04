@@ -39,6 +39,7 @@ local function RetrieveBibs( mmsId )
 end
 
 local function RetrieveItemByBarcode( barcode )
+    
     local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey}
     local requestUrl = AlmaApiInternal.ApiUrl .. "items?item_barcode=" .. Utility.URLEncode(barcode);
     log:DebugFormat("Request URL: {0}", requestUrl)
@@ -55,7 +56,7 @@ local function RetrieveItemByBarcode( barcode )
 end
 
 local function PlaceHoldByItemPID(mms_id, holding_id, item_pid, user, pickup_location, office_delivery)
-    local interfaceMngr = GetInterfaceManager()
+    
     -- if office delivery is selected, pickup_location is ignored.
     local pickup_location_type =""
     if office_delivery then
@@ -88,13 +89,14 @@ local function PlaceHoldByItemPID(mms_id, holding_id, item_pid, user, pickup_loc
         -- Convert that string to an xml document and throw an error.
         -- show an error message and throw an error
         log:Debug("call to webClient.PostRequest was NOT successful")
-        interfaceMngr:ShowMessage("Hold failed: ".. WebClient.ReadResponse(response):GetElementsByTagName("errorMessage"):Item(0).InnerText, "ERROR")
-        error("some error message")
+        local error_message = WebClient.ReadResponse(response):GetElementsByTagName("errorMessage"):Item(0).InnerText
+        interfaceMngr:ShowMessage("Hold failed: ".. error_message, "ERROR")
+        error(error_message)
     end
 end
 
 local function PlaceHoldByMmsId(mms_id, user, pickup_location, office_delivery)
-    local interfaceMngr = GetInterfaceManager()
+    
     -- if office delivery is selected, pickup_location is ignored.
     local pickup_location_type =""
     if office_delivery then
@@ -126,9 +128,9 @@ local function PlaceHoldByMmsId(mms_id, user, pickup_location, office_delivery)
         -- If the hold attempt fails, we expect the error object to contain a string of xml from the Alma server.
         -- Convert that string to an xml document and throw an error.
         -- show an error message and throw an error
-        log:Debug("call to webClient.post request was NOT successful")
-        interfaceMngr:ShowMessage("Hold failed: ".. WebClient.ReadResponse(response):GetElementsByTagName("errorMessage"):Item(0).InnerText, "ERROR")
-        error("some error message")
+        local error_message = WebClient.ReadResponse(response):GetElementsByTagName("errorMessage"):Item(0).InnerText
+        interfaceMngr:ShowMessage("Hold failed: ".. error_message, "ERROR")
+        error(error_message)
     end
 end
 
