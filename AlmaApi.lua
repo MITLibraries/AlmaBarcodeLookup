@@ -1,47 +1,48 @@
-local AlmaApiInternal = {};
-AlmaApiInternal.ApiUrl = nil;
-AlmaApiInternal.ApiKey = nil;
+local AlmaApiInternal = {}
+AlmaApiInternal.ApiUrl = nil
+AlmaApiInternal.ApiKey = nil
 
 
-local types = {};
-types["log4net.LogManager"] = luanet.import_type("log4net.LogManager");
-types["System.Net.WebClient"] = luanet.import_type("System.Net.WebClient");
-types["System.Text.Encoding"] = luanet.import_type("System.Text.Encoding");
-types["System.Xml.XmlTextReader"] = luanet.import_type("System.Xml.XmlTextReader");
-types["System.Xml.XmlDocument"] = luanet.import_type("System.Xml.XmlDocument");
+local types = {}
+types["log4net.LogManager"] = luanet.import_type("log4net.LogManager")
+types["System.Net.WebClient"] = luanet.import_type("System.Net.WebClient")
+types["System.Text.Encoding"] = luanet.import_type("System.Text.Encoding")
+types["System.Xml.XmlTextReader"] = luanet.import_type("System.Xml.XmlTextReader")
+types["System.Xml.XmlDocument"] = luanet.import_type("System.Xml.XmlDocument")
 
 -- Create a logger
-local log = types["log4net.LogManager"].GetLogger(rootLogger .. ".AlmaApi");
+local log = types["log4net.LogManager"].GetLogger(rootLogger .. ".AlmaApi")
 
-AlmaApi = AlmaApiInternal;
+AlmaApi = AlmaApiInternal
 
 
 local function RetrieveHoldingsList( mmsId )
     local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
     local requestUrl = AlmaApiInternal.ApiUrl .."bibs/"..
-    Utility.URLEncode(mmsId) .."/holdings";
-    log:DebugFormat("Request URL: {0}", requestUrl);
-    local response = WebClient.GetRequest(requestUrl, headers);
-    log:DebugFormat("response = {0}", response);
+    Utility.URLEncode(mmsId) .."/holdings"
+    log:DebugFormat("Request URL: {0}", requestUrl)
+    local response = WebClient.GetRequest(requestUrl, headers)
+    log:DebugFormat("response = {0}", response)
 
-    return WebClient.ReadResponse(response);
+    return WebClient.ReadResponse(response)
 end
 
 local function RetrieveBibs( mmsId )
     local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
     local requestUrl = AlmaApiInternal.ApiUrl .. "bibs?&mms_id=" .. Utility.URLEncode(mmsId);
-    log:DebugFormat("Request URL: {0}", requestUrl);
+    log:DebugFormat("Request URL: {0}", requestUrl)
 
-    local response = WebClient.GetRequest(requestUrl, headers);
-    log:DebugFormat("response = {0}", response);
+    local response = WebClient.GetRequest(requestUrl, headers)
+    log:DebugFormat("response = {0}", response)
 
-    return WebClient.ReadResponse(response);
+    return WebClient.ReadResponse(response)
 end
 
 local function RetrieveItemByBarcode( barcode )
-    local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
+    
+    local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey}
     local requestUrl = AlmaApiInternal.ApiUrl .. "items?item_barcode=" .. Utility.URLEncode(barcode);
-    log:DebugFormat("Request URL: {0}", requestUrl);
+    log:DebugFormat("Request URL: {0}", requestUrl)
 
     local success, response = pcall(WebClient.GetRequest, requestUrl, headers)
     if success then
@@ -64,9 +65,9 @@ local function PlaceHoldByItemPID(mms_id, holding_id, item_pid, user, pickup_loc
         pickup_location_type = "LIBRARY"
     end
 
-    local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey};
+    local headers = {"Accept: application/xml", "Content-Type: application/xml", "authorization: apikey "..AlmaApiInternal.ApiKey}
     local requestUrl = AlmaApiInternal.ApiUrl .. "bibs/"..mms_id.."/holdings/"..holding_id.."/items/"..item_pid.."/requests?user_id_type=all_unique&allow_same_request=true&user_id="..Utility.URLEncode(user);
-    log:DebugFormat("Request URL: {0}", requestUrl);
+    log:DebugFormat("Request URL: {0}", requestUrl)
     local body = [[
 <user_request>
     <request_type>HOLD</request_type>
@@ -75,7 +76,7 @@ local function PlaceHoldByItemPID(mms_id, holding_id, item_pid, user, pickup_loc
     <pickup_location_circulation_desk>DEFAULT_CIRC_DESK</pickup_location_circulation_desk>
 </user_request>]]
     log:DebugFormat("request body: {0}", body);
-    local success, response = pcall(WebClient.PostRequest, requestUrl, headers, body);
+    local success, response = pcall(WebClient.PostRequest, requestUrl, headers, body)
     log:DebugFormat("response = {0}", response);
     log:DebugFormat("success: {0}", success)
     if success then

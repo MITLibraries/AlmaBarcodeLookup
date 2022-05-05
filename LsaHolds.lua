@@ -1,18 +1,18 @@
-require "Atlas.AtlasHelpers";
-local rootLogger = "AtlasSystems.Addons.AlmaBarcodeLookupAddon";
+require "Atlas.AtlasHelpers"
+local rootLogger = "AtlasSystems.Addons.AlmaBarcodeLookupAddon"
 
-luanet.load_assembly("System.Windows.Forms");  -- For cursor manipulation
-luanet.load_assembly("log4net");
-luanet.load_assembly("System.Xml");
+luanet.load_assembly("System.Windows.Forms")  -- For cursor manipulation
+luanet.load_assembly("log4net")
+luanet.load_assembly("System.Xml")
 
 -- Load the .Net types that we will be using.
 local types = {};
-types["System.Windows.Forms.Cursor"] = luanet.import_type("System.Windows.Forms.Cursor");
-types["System.Windows.Forms.Cursors"] = luanet.import_type("System.Windows.Forms.Cursors");
-types["System.Windows.Forms.Application"] = luanet.import_type("System.Windows.Forms.Application");
-types["log4net.LogManager"] = luanet.import_type("log4net.LogManager");
-local log = types["log4net.LogManager"].GetLogger(rootLogger);
-log:Debug("Finished creating types");
+types["System.Windows.Forms.Cursor"] = luanet.import_type("System.Windows.Forms.Cursor")
+types["System.Windows.Forms.Cursors"] = luanet.import_type("System.Windows.Forms.Cursors")
+types["System.Windows.Forms.Application"] = luanet.import_type("System.Windows.Forms.Application")
+types["log4net.LogManager"] = luanet.import_type("log4net.LogManager")
+local log = types["log4net.LogManager"].GetLogger(rootLogger)
+log:Debug("Finished creating types")
 
 -- Load settings
 local settings = {}
@@ -29,43 +29,43 @@ settings.barcodeField = Utility.StringSplit(".", GetSetting("barcode field"))
 settings.mmsIdField = Utility.StringSplit(".", GetSetting("mms id field"))
 
 -- We will store the interface manager object here so that we don't have to make multiple GetInterfaceManager calls.
-local interfaceMngr = nil;
-log:Debug("Created Interface Manager");
+local interfaceMngr = nil
+log:Debug("Created Interface Manager")
 
-local product = types["System.Windows.Forms.Application"].ProductName;
+local product = types["System.Windows.Forms.Application"].ProductName
 
 function Init()
-  log:Debug("Starting");
-  interfaceMngr = GetInterfaceManager();
-  log:Debug("Got Interface Manager");
+  log:Debug("Starting")
+  interfaceMngr = GetInterfaceManager()
+  log:Debug("Got Interface Manager")
 
   -- Retrieve Ribbon Page and Add Buttons.
-  local ribbonPage = interfaceMngr:CreateRibbonPage("MIT LSA Holds");
-  log:Debug("Created Ribbon Page");
+  local ribbonPage = interfaceMngr:CreateRibbonPage("MIT LSA Holds")
+  log:Debug("Created Ribbon Page")
 
-  ribbonPage:CreateButton("Import by Barcode", GetClientImage(DataMapping.ClientImage[product]), "ImportItem", "Options");
-  ribbonPage:CreateButton("Place LSA Hold", GetClientImage(DataMapping.ClientImage[product]), "PlaceLSAHold", "Options");
+  ribbonPage:CreateButton("Import by Barcode", GetClientImage(DataMapping.ClientImage[product]), "ImportItem", "Options")
+  ribbonPage:CreateButton("Place LSA Hold", GetClientImage(DataMapping.ClientImage[product]), "PlaceLSAHold", "Options")
 
-  log:Debug("Created Buttons");
+  log:Debug("Created Buttons")
 
   -- Find the field to perform lookup with
   if settings.FieldToPerformLookupWith:lower() == "{default}" then
-    settings.FieldToPerformLookupWith = Utility.StringSplit(".", DataMapping.BarcodeFieldMapping[product]);
-    settings.FieldToPerformLookupWith[1] = Utility.Trim(settings.FieldToPerformLookupWith[1]);
-    settings.FieldToPerformLookupWith[2] = Utility.Trim(settings.FieldToPerformLookupWith[2]);
-    log:InfoFormat("Field to Perform Lookup With is {0}.{1}", settings.FieldToPerformLookupWith[1], settings.FieldToPerformLookupWith[2]);
+    settings.FieldToPerformLookupWith = Utility.StringSplit(".", DataMapping.BarcodeFieldMapping[product])
+    settings.FieldToPerformLookupWith[1] = Utility.Trim(settings.FieldToPerformLookupWith[1])
+    settings.FieldToPerformLookupWith[2] = Utility.Trim(settings.FieldToPerformLookupWith[2])
+    log:InfoFormat("Field to Perform Lookup With is {0}.{1}", settings.FieldToPerformLookupWith[1], settings.FieldToPerformLookupWith[2])
   else
-    log:Warn("Invalid Field to Perform Lookup With");
+    log:Warn("Invalid Field to Perform Lookup With")
   end
 
-  InitializeVariables();
+  InitializeVariables()
 
 end
 
 function InitializeVariables()
-  log:Debug("Initializing Variables");
-  AlmaLookup.InitializeVariables(settings.AlmaApiUrl, settings.AlmaApiKey, settings.AllowOverwriteWithBlankValue, settings.FieldsToImport);
-  log:Debug("Finished Initializing Variables");
+  log:Debug("Initializing Variables")
+  AlmaLookup.InitializeVariables(settings.AlmaApiUrl, settings.AlmaApiKey, settings.AllowOverwriteWithBlankValue, settings.FieldsToImport)
+  log:Debug("Finished Initializing Variables")
 end
 
 function ImportItem()
@@ -77,8 +77,8 @@ function ImportItem()
 
   if(lookupResult ~= nil) then
     for _, result in ipairs(lookupResult) do
-      log:InfoFormat("Importing {0} into {1}.{2}", result.valueToImport, result.valueDestination[1], result.valueDestination[2]);
-      SetFieldValue(result.valueDestination[1], result.valueDestination[2], result.valueToImport);
+      log:InfoFormat("Importing {0} into {1}.{2}", result.valueToImport, result.valueDestination[1], result.valueDestination[2])
+      SetFieldValue(result.valueDestination[1], result.valueDestination[2], result.valueToImport)
     end
   else
     interfaceMngr:ShowMessage("No item found.", "Item Not found")
@@ -111,30 +111,24 @@ function GetField(fieldTable, field)
 end
 
 function GetItemPID(barcode)
-  log:InfoFormat("getting item ID for barcode: {0}", barcode);
-  local succeeded, response = pcall(AlmaApi.RetrieveItemByBarcode, barcode);
+  log:InfoFormat("getting item ID for barcode: {0}", barcode)
+  local succeeded, response = pcall(AlmaApi.RetrieveItemByBarcode, barcode)
   if succeeded then
     --get Item PID from XML response
-    local mms_id = response:GetElementsByTagName("mms_id"):Item(0).InnerText;
-    local holding_id = response:GetElementsByTagName("holding_id"):Item(0).InnerText;
-    local item_id = response:GetElementsByTagName("pid"):Item(0).InnerText;
-    log:InfoFormat("item_id: {0}", item_id);
-    return mms_id, holding_id, item_id;
+    local mms_id = response:GetElementsByTagName("mms_id"):Item(0).InnerText
+    local holding_id = response:GetElementsByTagName("holding_id"):Item(0).InnerText
+    local item_id = response:GetElementsByTagName("pid"):Item(0).InnerText
+    log:InfoFormat("item_id: {0}", item_id)
+    return mms_id, holding_id, item_id
   else
-      log:Error("Error Getting item PID");
+      log:Error("Error Getting item PID")
   end
 
 end
 
 function PlaceLSAHold()
-
--- Places a hold on behalf of the user defined in config.xml to be held for pickup at the circ desk defined in config.xml.
-
--- Set the mouse cursor to busy.
-  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].WaitCursor;
-
-  -- get the barcode from the illiad record
-  local itemBarcode = GetBarcode();
+  -- Set the mouse cursor to busy.
+  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].WaitCursor
 
     -- We need a barcode or MMS ID to place a hold. 
     if GetField(settings.barcodeField[1], settings.barcodeField[2]) then
@@ -162,13 +156,10 @@ function PlaceItemLevelHold(barcode)
         settings.pickup_location, settings.office_delivery
       )
   if success then
-    log:Info("hold placed successfully");
+    log:Info("hold placed successfully")
   else
-    log:Info("hold attempt failed");
+    log:Info("hold attempt failed")
   end
-
-  -- Set the mouse cursor back to default.
-  types["System.Windows.Forms.Cursor"].Current = types["System.Windows.Forms.Cursors"].Default;
 end
 
 function PlaceTitleLevelHold(mms_id)
